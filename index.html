@@ -1,130 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Filter 10,000 Dòng</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; position: sticky; top: 0; }
-        input, button { padding: 8px; }
-        #search { width: 300px; margin-right: 10px; }
-        #total { margin-top: 10px; font-weight: bold; color: #d9534f; }
-        .highlight { background-color: yellow; }
-        #loading { display: none; color: green; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Tra cứu dữ liệu từ JSON</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    input {
+      padding: 8px;
+      width: 300px;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    tr.highlight {
+      background-color: yellow;
+    }
+    #totalBox {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <h1>Filter 10,000 Dòng</h1>
-    <input type="text" id="search" placeholder="Nhập từ khóa..." onkeyup="debounceFilter()">
-    <button onclick="filterData()">Tìm kiếm</button>
-    <span id="loading">Đang tải...</span>
-    <div id="total"></div>
-    <div style="height: 500px; overflow: auto; margin-top: 10px;">
-        <table id="table">
-            <thead id="header"></thead>
-            <tbody id="body"></tbody>
-        </table>
-    </div>
+  <h2>🔍 Tìm kiếm dữ liệu từ JSON</h2>
+  <input type="text" id="searchBox" placeholder="Nhập từ khóa..." oninput="searchData()">
 
-    <script>
-        // ===== TỐI ƯU HIỆU SUẤT =====
-        // 1. Giả lập 10,000 dòng dữ liệu (cột: ID, Tên, Giá, Số lượng)
-        function generateMassiveData() {
-            const data = [["ID", "Tên", "Giá", "Số lượng"]];
-            for (let i = 1; i <= 10000; i++) {
-                data.push([
-                    `SP${i.toString().padStart(5, '0')}`,
-                    `Sản phẩm ${Math.floor(Math.random() * 100)}`,
-                    Math.floor(Math.random() * 10000),
-                    Math.floor(Math.random() * 100)
-                ]);
-            }
-            return data;
-        }
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th>日期</th>
+        <th>班管</th>
+        <th>状态</th>
+        <th>品种</th>
+        <th>规格</th>
+        <th>形式</th>
+        <th>组合</th>
+        <th>件数</th>
+        <th>工号</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- Dữ liệu sẽ hiển thị ở đây -->
+    </tbody>
+  </table>
 
-        // 2. Biến toàn cục lưu dữ liệu và bản đồ tìm kiếm
-        let allData = generateMassiveData();
-        let filteredData = [];
-        const PAGE_SIZE = 100; // Chỉ hiển thị 100 dòng/trang
+  <div id="totalBox"></div>
 
-        // 3. Hàm hiển thị dữ liệu phân trang
-        function renderPaginatedData(data) {
-            const header = document.getElementById("header");
-            const body = document.getElementById("body");
-            header.innerHTML = body.innerHTML = "";
+  <script>
+    let data = [];
 
-            // Header
-            const headerRow = document.createElement("tr");
-            allData[0].forEach(cell => {
-                const th = document.createElement("th");
-                th.textContent = cell;
-                headerRow.appendChild(th);
-            });
-            header.appendChild(headerRow);
+    // Đọc JSON từ GitHub (raw link)
+    fetch('https://raw.githubusercontent.com/quangthanhqldd/pp/refs/heads/main/Y.json')
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        renderTable(data); // Hiển thị ban đầu
+      })
+      .catch(err => {
+        alert("Không thể tải dữ liệu từ JSON. Lỗi: " + err);
+      });
 
-            // Body (chỉ render PAGE_SIZE dòng đầu)
-            data.slice(1, PAGE_SIZE + 1).forEach(row => {
-                const tr = document.createElement("tr");
-                row.forEach(cell => {
-                    const td = document.createElement("td");
-                    td.textContent = cell;
-                    tr.appendChild(td);
-                });
-                body.appendChild(tr);
-            });
+    function renderTable(items) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = "";
 
-            // Thêm thông báo nếu dữ liệu bị cắt
-            if (data.length > PAGE_SIZE) {
-                const tr = document.createElement("tr");
-                const td = document.createElement("td");
-                td.colSpan = allData[0].length;
-                td.style.textAlign = "center";
-                td.textContent = `Đang hiển thị ${PAGE_SIZE}/${data.length - 1} dòng...`;
-                tr.appendChild(td);
-                body.appendChild(tr);
-            }
-        }
+      let totalJianshu = 0;
 
-        // 4. Hàm filter tối ưu dùng Web Worker (tránh block UI)
-        function filterData() {
-            document.getElementById("loading").style.display = "inline";
-            const keyword = document.getElementById("search").value.trim().toLowerCase();
+      items.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.riqi}</td>
+          <td>${item.banguan}</td>
+          <td>${item.zhuangtai}</td>
+          <td>${item.pinzhong}</td>
+          <td>${item.guige}</td>
+          <td>${item.xingshi}</td>
+          <td>${item.zuhe}</td>
+          <td>${item.jianshu}</td>
+          <td>${item.gonghao}</td>
+        `;
+        tbody.appendChild(row);
 
-            setTimeout(() => { // Giả lập async
-                filteredData = keyword === "" 
-                    ? [...allData] 
-                    : [
-                        allData[0],
-                        ...allData.slice(1).filter(row => 
-                            row.some(cell => cell.toString().toLowerCase().includes(keyword))
-                        )
-                    ];
+        // Cộng tổng cột 件数 (jianshu)
+        totalJianshu += Number(item.jianshu) || 0;
+      });
 
-                renderPaginatedData(filteredData);
-                updateTotal(filteredData);
-                document.getElementById("loading").style.display = "none";
-            }, 100);
-        }
+      // Hiển thị tổng 件数
+      document.getElementById("totalBox").innerText = "👉 Tổng 件数: " + totalJianshu.toLocaleString();
+    }
 
-        // 5. Tránh filter liên tục khi gõ phím
-        let debounceTimer;
-        function debounceFilter() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(filterData, 300);
-        }
+    function searchData() {
+      const keyword = document.getElementById("searchBox").value.trim().toLowerCase();
 
-        // 6. Tính tổng số lượng
-        function updateTotal(data) {
-            const total = data.slice(1).reduce((sum, row) => sum + parseInt(row[3]), 0);
-            document.getElementById("total").innerHTML = `Tổng số lượng: <span style="color: red;">${total}</span> | Số dòng: ${data.length - 1}`;
-        }
-
-        // Khởi tạo
-        window.onload = () => {
-            renderPaginatedData(allData);
-            updateTotal(allData);
-        };
-    </script>
+      if (keyword === "") {
+        renderTable(data); // Nếu không có từ khóa, hiển thị toàn bộ
+      } else {
+        const filtered = data.filter(item =>
+          Object.values(item).some(val =>
+            String(val).toLowerCase().includes(keyword)
+          )
+        );
+        renderTable(filtered);
+      }
+    }
+  </script>
 </body>
 </html>
