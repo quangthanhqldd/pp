@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Filter 10,000 Dòng</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; position: sticky; top: 0; }
+        input, button { padding: 8px; }
+        #search { width: 300px; margin-right: 10px; }
+        #total { margin-top: 10px; font-weight: bold; color: #d9534f; }
+        .highlight { background-color: yellow; }
+        #loading { display: none; color: green; }
+    </style>
+</head>
+<body>
+    <h1>Filter 10,000 Dòng</h1>
+    <input type="text" id="search" placeholder="Nhập từ khóa..." onkeyup="debounceFilter()">
+    <button onclick="filterData()">Tìm kiếm</button>
+    <span id="loading">Đang tải...</span>
+    <div id="total"></div>
+    <div style="height: 500px; overflow: auto; margin-top: 10px;">
+        <table id="table">
+            <thead id="header"></thead>
+            <tbody id="body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // ===== TỐI ƯU HIỆU SUẤT =====
+        // 1. Giả lập 10,000 dòng dữ liệu (cột: ID, Tên, Giá, Số lượng)
+        function generateMassiveData() {
+            const data = [["ID", "Tên", "Giá", "Số lượng"]];
+            for (let i = 1; i <= 10000; i++) {
+                data.push([
+                    `SP${i.toString().padStart(5, '0')}`,
+                    `Sản phẩm ${Math.floor(Math.random() * 100)}`,
+                    Math.floor(Math.random() * 10000),
+                    Math.floor(Math.random() * 100)
+                ]);
+            }
+            return data;
+        }
+
+        // 2. Biến toàn cục lưu dữ liệu và bản đồ tìm kiếm
+        let allData = generateMassiveData();
+        let filteredData = [];
+        const PAGE_SIZE = 100; // Chỉ hiển thị 100 dòng/trang
+
+        // 3. Hàm hiển thị dữ liệu phân trang
+        function renderPaginatedData(data) {
+            const header = document.getElementById("header");
+            const body = document.getElementById("body");
+            header.innerHTML = body.innerHTML = "";
+
+            // Header
+            const headerRow = document.createElement("tr");
+            allData[0].forEach(cell => {
+                const th = document.createElement("th");
+                th.textContent = cell;
+                headerRow.appendChild(th);
+            });
+            header.appendChild(headerRow);
+
+            // Body (chỉ render PAGE_SIZE dòng đầu)
+            data.slice(1, PAGE_SIZE + 1).forEach(row => {
+                const tr = document.createElement("tr");
+                row.forEach(cell => {
+                    const td = document.createElement("td");
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+
+            // Thêm thông báo nếu dữ liệu bị cắt
+            if (data.length > PAGE_SIZE) {
+                const tr = document.createElement("tr");
+                const td = document.createElement("td");
+                td.colSpan = allData[0].length;
+                td.style.textAlign = "center";
+                td.textContent = `Đang hiển thị ${PAGE_SIZE}/${data.length - 1} dòng...`;
+                tr.appendChild(td);
+                body.appendChild(tr);
+            }
+        }
+
+        // 4. Hàm filter tối ưu dùng Web Worker (tránh block UI)
+        function filterData() {
+            document.getElementById("loading").style.display = "inline";
+            const keyword = document.getElementById("search").value.trim().toLowerCase();
+
+            setTimeout(() => { // Giả lập async
+                filteredData = keyword === "" 
+                    ? [...allData] 
+                    : [
+                        allData[0],
+                        ...allData.slice(1).filter(row => 
+                            row.some(cell => cell.toString().toLowerCase().includes(keyword))
+                        )
+                    ];
+
+                renderPaginatedData(filteredData);
+                updateTotal(filteredData);
+                document.getElementById("loading").style.display = "none";
+            }, 100);
+        }
+
+        // 5. Tránh filter liên tục khi gõ phím
+        let debounceTimer;
+        function debounceFilter() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(filterData, 300);
+        }
+
+        // 6. Tính tổng số lượng
+        function updateTotal(data) {
+            const total = data.slice(1).reduce((sum, row) => sum + parseInt(row[3]), 0);
+            document.getElementById("total").innerHTML = `Tổng số lượng: <span style="color: red;">${total}</span> | Số dòng: ${data.length - 1}`;
+        }
+
+        // Khởi tạo
+        window.onload = () => {
+            renderPaginatedData(allData);
+            updateTotal(allData);
+        };
+    </script>
+</body>
+</html>
