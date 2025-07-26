@@ -39,12 +39,30 @@
         }
         #results {
             margin-top: 20px;
+            overflow-x: auto;
         }
-        .result-item {
+        .vertical-table {
+            display: table;
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .vertical-row {
+            display: table-row;
+        }
+        .vertical-header {
+            display: table-cell;
+            font-weight: bold;
+            background: #f4f4f4;
+            padding: 8px;
             border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            white-space: nowrap;
+            width: 1%;
+        }
+        .vertical-value {
+            display: table-cell;
+            padding: 8px;
+            border: 1px solid #ddd;
         }
         .error {
             color: red;
@@ -54,6 +72,10 @@
             text-align: center;
             font-style: italic;
             color: #666;
+        }
+        .result-count {
+            margin-bottom: 10px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -120,7 +142,7 @@
             displayResults(filteredData);
         }
         
-        // Hàm hiển thị kết quả
+        // Hàm hiển thị kết quả dạng bảng dọc
         function displayResults(data) {
             const resultsContainer = document.getElementById('results');
             
@@ -129,15 +151,25 @@
                 return;
             }
             
-            let html = `<p>Tìm thấy ${data.length} kết quả:</p>`;
+            let html = `<div class="result-count">Tìm thấy ${data.length} kết quả:</div>`;
+            
+            // Lấy danh sách các header từ item đầu tiên
+            const headers = Object.keys(data[0]);
             
             data.forEach(item => {
-                html += '<div class="result-item">';
+                html += '<div class="vertical-table">';
+                
                 for (const key in item) {
                     if (item.hasOwnProperty(key)) {
-                        html += `<p><strong>${key}:</strong> ${item[key]}</p>`;
+                        html += `
+                            <div class="vertical-row">
+                                <div class="vertical-header">${key}</div>
+                                <div class="vertical-value">${item[key]}</div>
+                            </div>
+                        `;
                     }
                 }
+                
                 html += '</div>';
             });
             
