@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Truy vấn dữ liệu từ JSON</title>
+    <title>检查数据表-阿成</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -77,15 +77,15 @@
     </style>
 </head>
 <body>
-    <h1>Truy vấn dữ liệu từ JSON</h1>
+    <h1>检查数据表-阿成</h1>
     
     <div class="search-container">
-        <label for="searchInput">Tìm kiếm:</label>
-        <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm kiếm...">
-        <div class="total-display" id="totalDisplay">Tổng số lượng: 0</div>
+        <label for="searchInput">查询</label>
+        <input type="text" id="searchInput" placeholder="输入内容...">
+        <div class="total-display" id="totalDisplay">总件数: 0</div>
     </div>
     
-    <div id="loading" class="loading">Đang tải dữ liệu...</div>
+    <div id="loading" class="loading">正在查找...</div>
     
     <div id="results"></div>
     
@@ -149,9 +149,9 @@
                 return sum + quantity;
             }, 0);
             
-            totalDisplay.textContent = `Tổng số lượng: ${total}`;
+            totalDisplay.textContent = `总件数: ${total}`;
             
-            let html = `<div class="result-count">Tìm thấy ${data.length} kết quả:</div>`;
+            let html = `<div class="result-count">找到 ${data.length} 结果:</div>`;
             html += '<table class="data-table"><thead><tr>';
             
             // Tạo tiêu đề bảng từ keys của object đầu tiên
