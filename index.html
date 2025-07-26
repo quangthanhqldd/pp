@@ -23,14 +23,37 @@
             font-size: 1.5rem;
             margin: 10px 0;
         }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
         .search-container {
-            margin: 10px 0;
+            flex: 1;
+            min-width: 200px;
             padding: 10px;
             background: #f4f4f4;
             border-radius: 5px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        }
+        .orientation-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        button {
+            padding: 8px 12px;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        button:hover {
+            background: #555;
+        }
+        button.active {
+            background: #27ae60;
         }
         input {
             padding: 8px;
@@ -57,7 +80,10 @@
             border-collapse: collapse;
             margin-bottom: 20px;
             font-size: 0.9rem;
-            min-width: 600px; /* Giữ cho bảng rộng đủ để cuộn ngang */
+            min-width: 600px;
+        }
+        .data-table.portrait {
+            min-width: 100%;
         }
         .data-table th {
             background-color: #f4f4f4;
@@ -97,21 +123,77 @@
             font-size: 0.9rem;
         }
         
-        /* Hiệu ứng khi chạm vào bảng trên mobile */
         @media (hover: none) {
             .data-table tr:active {
                 background-color: #e0e0e0;
             }
+        }
+        
+        /* Hiệu ứng khi xoay màn hình */
+        @media screen and (orientation: portrait) {
+            .orientation-buttons button.portrait {
+                background: #27ae60;
+            }
+        }
+        @media screen and (orientation: landscape) {
+            .orientation-buttons button.landscape {
+                background: #27ae60;
+            }
+        }
+        
+        /* Fullscreen cho bảng khi xoay dọc */
+        .fullscreen-table {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 1000;
+            overflow: auto;
+            padding: 10px;
+        }
+        .fullscreen-table .data-table {
+            min-width: auto;
+            width: 100%;
+        }
+        .close-fullscreen {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1001;
         }
     </style>
 </head>
 <body>
     <h1>Truy vấn dữ liệu từ JSON</h1>
     
-    <div class="search-container">
-        <label for="searchInput">Tìm kiếm:</label>
-        <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm kiếm..." autocomplete="off">
-        <div class="total-display" id="totalDisplay">Tổng số lượng: 0</div>
+    <div class="controls">
+        <div class="search-container">
+            <label for="searchInput">Tìm kiếm:</label>
+            <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm kiếm..." autocomplete="off">
+            <div class="total-display" id="totalDisplay">Tổng số lượng: 0</div>
+        </div>
+        
+        <div class="orientation-buttons">
+            <button id="portraitBtn" class="portrait" title="Chế độ dọc">
+                <span style="display: inline-block; transform: rotate(90deg);">↔️</span>
+            </button>
+            <button id="landscapeBtn" class="landscape" title="Chế độ ngang">
+                ↔️
+            </button>
+            <button id="fullscreenBtn" title="Xem toàn màn hình">
+                ⛶
+            </button>
+        </div>
     </div>
     
     <div id="loading" class="loading">Đang tải dữ liệu...</div>
@@ -121,6 +203,8 @@
     <script>
         // Biến lưu trữ dữ liệu JSON
         let jsonData = [];
+        let currentOrientation = 'auto';
+        let isFullscreen = false;
         
         // Hàm tải dữ liệu JSON từ URL
         async function loadJSONData() {
@@ -132,9 +216,76 @@
                 jsonData = await response.json();
                 document.getElementById('loading').style.display = 'none';
                 searchData(); // Tự động hiển thị dữ liệu sau khi tải
+                
+                // Kiểm tra hướng màn hình ban đầu
+                checkOrientation();
             } catch (error) {
                 document.getElementById('loading').innerHTML = 
                     `<span class="error">Lỗi khi tải dữ liệu: ${error.message}</span>`;
+            }
+        }
+        
+        // Hàm kiểm tra hướng màn hình
+        function checkOrientation() {
+            const portraitBtn = document.getElementById('portraitBtn');
+            const landscapeBtn = document.getElementById('landscapeBtn');
+            
+            if (window.innerHeight > window.innerWidth) {
+                portraitBtn.classList.add('active');
+                landscapeBtn.classList.remove('active');
+            } else {
+                portraitBtn.classList.remove('active');
+                landscapeBtn.classList.add('active');
+            }
+        }
+        
+        // Hàm xoay màn hình
+        function setOrientation(orientation) {
+            currentOrientation = orientation;
+            const table = document.querySelector('.data-table');
+            if (table) {
+                if (orientation === 'portrait') {
+                    table.classList.add('portrait');
+                } else {
+                    table.classList.remove('portrait');
+                }
+            }
+        }
+        
+        // Hàm vào chế độ toàn màn hình
+        function toggleFullscreen() {
+            const resultsContainer = document.getElementById('results');
+            
+            if (!isFullscreen) {
+                const content = resultsContainer.innerHTML;
+                resultsContainer.innerHTML = '';
+                
+                const fullscreenDiv = document.createElement('div');
+                fullscreenDiv.className = 'fullscreen-table';
+                fullscreenDiv.innerHTML = content;
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-fullscreen';
+                closeBtn.innerHTML = '×';
+                closeBtn.onclick = toggleFullscreen;
+                
+                document.body.appendChild(fullscreenDiv);
+                document.body.appendChild(closeBtn);
+                
+                isFullscreen = true;
+            } else {
+                const fullscreenDiv = document.querySelector('.fullscreen-table');
+                const closeBtn = document.querySelector('.close-fullscreen');
+                
+                if (fullscreenDiv) {
+                    document.getElementById('results').innerHTML = fullscreenDiv.innerHTML;
+                    document.body.removeChild(fullscreenDiv);
+                }
+                if (closeBtn) {
+                    document.body.removeChild(closeBtn);
+                }
+                
+                isFullscreen = false;
             }
         }
         
@@ -182,7 +333,7 @@
             
             let html = `<div class="result-count">Tìm thấy ${data.length} kết quả:</div>`;
             html += '<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">';
-            html += '<table class="data-table"><thead><tr>';
+            html += `<table class="data-table ${currentOrientation === 'portrait' ? 'portrait' : ''}"><thead><tr>`;
             
             // Tạo tiêu đề bảng từ keys của object đầu tiên
             const headers = Object.keys(data[0]);
@@ -201,11 +352,40 @@
             });
             
             html += '</tbody></table></div>';
-            resultsContainer.innerHTML = html;
+            
+            if (isFullscreen) {
+                const fullscreenDiv = document.querySelector('.fullscreen-table');
+                if (fullscreenDiv) {
+                    fullscreenDiv.innerHTML = html;
+                }
+            } else {
+                resultsContainer.innerHTML = html;
+            }
         }
         
         // Tải dữ liệu JSON khi trang được tải
-        window.onload = loadJSONData;
+        window.onload = function() {
+            loadJSONData();
+            
+            // Thêm sự kiện cho nút xoay màn hình
+            document.getElementById('portraitBtn').addEventListener('click', function() {
+                setOrientation('portrait');
+                this.classList.add('active');
+                document.getElementById('landscapeBtn').classList.remove('active');
+            });
+            
+            document.getElementById('landscapeBtn').addEventListener('click', function() {
+                setOrientation('landscape');
+                this.classList.add('active');
+                document.getElementById('portraitBtn').classList.remove('active');
+            });
+            
+            // Thêm sự kiện cho nút fullscreen
+            document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+            
+            // Theo dõi thay đổi kích thước màn hình
+            window.addEventListener('resize', checkOrientation);
+        };
         
         // Tự động tìm kiếm khi nhập liệu
         document.getElementById('searchInput').addEventListener('input', searchData);
