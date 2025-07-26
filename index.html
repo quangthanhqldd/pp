@@ -23,19 +23,15 @@
             background: #f4f4f4;
             border-radius: 5px;
         }
-        input, button {
+        input {
             padding: 8px;
             margin: 5px 0;
+            width: 300px;
         }
-        button {
-            background: #333;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-        button:hover {
-            background: #555;
+        .total-display {
+            margin: 10px 0;
+            font-weight: bold;
+            color: #d35400;
         }
         #results {
             margin-top: 20px;
@@ -85,9 +81,8 @@
     
     <div class="search-container">
         <label for="searchInput">Tìm kiếm:</label>
-        <input type="text" id="searchInput" placeholder="Nhập từ khóa...">
-        <button onclick="searchData()">Tìm kiếm</button>
-        <button onclick="showAllData()">Hiển thị tất cả</button>
+        <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm kiếm...">
+        <div class="total-display" id="totalDisplay">Tổng số lượng: 0</div>
     </div>
     
     <div id="loading" class="loading">Đang tải dữ liệu...</div>
@@ -107,50 +102,54 @@
                 }
                 jsonData = await response.json();
                 document.getElementById('loading').style.display = 'none';
-                showAllData();
+                searchData(); // Tự động hiển thị dữ liệu sau khi tải
             } catch (error) {
                 document.getElementById('loading').innerHTML = 
                     `<span class="error">Lỗi khi tải dữ liệu: ${error.message}</span>`;
             }
         }
         
-        // Hàm hiển thị tất cả dữ liệu
-        function showAllData() {
-            displayResults(jsonData);
-        }
-        
-        // Hàm tìm kiếm dữ liệu
+        // Hàm tìm kiếm dữ liệu tự động
         function searchData() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (!searchTerm) {
-                showAllData();
-                return;
-            }
+            let filteredData = jsonData;
             
-            const filteredData = jsonData.filter(item => {
-                // Kiểm tra tất cả các trường trong mỗi item
-                for (const key in item) {
-                    if (item.hasOwnProperty(key)) {
-                        const value = String(item[key]).toLowerCase();
-                        if (value.includes(searchTerm)) {
-                            return true;
+            if (searchTerm) {
+                filteredData = jsonData.filter(item => {
+                    // Kiểm tra tất cả các trường trong mỗi item
+                    for (const key in item) {
+                        if (item.hasOwnProperty(key)) {
+                            const value = String(item[key]).toLowerCase();
+                            if (value.includes(searchTerm)) {
+                                return true;
+                            }
                         }
                     }
-                }
-                return false;
-            });
+                    return false;
+                });
+            }
             
             displayResults(filteredData);
         }
         
-        // Hàm hiển thị kết quả dạng bảng ngang
+        // Hàm hiển thị kết quả dạng bảng ngang và tính tổng
         function displayResults(data) {
             const resultsContainer = document.getElementById('results');
+            const totalDisplay = document.getElementById('totalDisplay');
             
             if (data.length === 0) {
                 resultsContainer.innerHTML = '<p>Không tìm thấy kết quả nào.</p>';
+                totalDisplay.textContent = 'Tổng số lượng: 0';
                 return;
             }
+            
+            // Tính tổng cột số 8 (件数)
+            const total = data.reduce((sum, item) => {
+                const quantity = parseInt(item['件数']) || 0;
+                return sum + quantity;
+            }, 0);
+            
+            totalDisplay.textContent = `Tổng số lượng: ${total}`;
             
             let html = `<div class="result-count">Tìm thấy ${data.length} kết quả:</div>`;
             html += '<table class="data-table"><thead><tr>';
@@ -177,6 +176,9 @@
         
         // Tải dữ liệu JSON khi trang được tải
         window.onload = loadJSONData;
+        
+        // Tự động tìm kiếm khi nhập liệu
+        document.getElementById('searchInput').addEventListener('input', searchData);
     </script>
 </body>
 </html>
