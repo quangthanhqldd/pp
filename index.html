@@ -15,8 +15,6 @@
             padding: 10px;
             width: 100%;
             -webkit-text-size-adjust: 100%;
-            touch-action: manipulation;
-            transform-origin: 0 0;
         }
         h1 {
             color: #333;
@@ -29,6 +27,9 @@
             padding: 10px;
             background: #f4f4f4;
             border-radius: 5px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         input {
             padding: 8px;
@@ -46,15 +47,20 @@
         }
         #results {
             margin-top: 10px;
-            overflow: auto;
+            width: 100%;
+        }
+        .scroll-wrapper {
+            overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             width: 100%;
+            max-width: 100%;
         }
         .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
             font-size: 0.9rem;
+            min-width: 600px;
         }
         .data-table th {
             background-color: #f4f4f4;
@@ -91,27 +97,18 @@
             font-weight: bold;
             font-size: 0.9rem;
         }
-        
-        /* Xoay toàn bộ trang khi ở chế độ dọc */
-        @media screen and (orientation: portrait) {
-            body {
-                transform: rotate(90deg);
-                transform-origin: left top;
-                width: 100vh;
-                height: 100vw;
-                overflow-x: hidden;
-                position: absolute;
-                top: 100%;
-                left: 0;
+
+        /* Tối ưu cho màn hình nhỏ */
+        @media (max-width: 600px) {
+            .data-table {
+                font-size: 0.8rem;
             }
-            #results {
-                height: calc(100vw - 150px);
+            .data-table th, 
+            .data-table td {
+                padding: 4px 6px;
             }
-        }
-        
-        @media (hover: none) {
-            .data-table tr:active {
-                background-color: #e0e0e0;
+            h1 {
+                font-size: 1.3rem;
             }
         }
     </style>
@@ -192,6 +189,7 @@
             totalDisplay.textContent = `Tổng số lượng: ${total}`;
             
             let html = `<div class="result-count">Tìm thấy ${data.length} kết quả:</div>`;
+            html += '<div class="scroll-wrapper">';
             html += '<table class="data-table"><thead><tr>';
             
             // Tạo tiêu đề bảng từ keys của object đầu tiên
@@ -210,7 +208,7 @@
                 html += '</tr>';
             });
             
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             resultsContainer.innerHTML = html;
         }
         
@@ -219,30 +217,6 @@
         
         // Tự động tìm kiếm khi nhập liệu
         document.getElementById('searchInput').addEventListener('input', searchData);
-        
-        // Ngăn chặn phóng to khi double tap trên mobile
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-        
-        // Tự động xoay màn hình trên điện thoại
-        function lockOrientation() {
-            if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock('landscape').catch(function(error) {
-                    console.log('Không thể khóa hướng màn hình: ', error);
-                });
-            }
-        }
-        
-        // Thử khóa màn hình ở chế độ ngang khi trên mobile
-        if (window.innerHeight > window.innerWidth) {
-            lockOrientation();
-        }
     </script>
 </body>
 </html>
