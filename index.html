@@ -41,28 +41,29 @@
             margin-top: 20px;
             overflow-x: auto;
         }
-        .vertical-table {
-            display: table;
-            border-collapse: collapse;
+        .data-table {
             width: 100%;
+            border-collapse: collapse;
             margin-bottom: 20px;
         }
-        .vertical-row {
-            display: table-row;
-        }
-        .vertical-header {
-            display: table-cell;
+        .data-table th {
+            background-color: #f4f4f4;
+            position: sticky;
+            top: 0;
             font-weight: bold;
-            background: #f4f4f4;
-            padding: 8px;
+            text-align: left;
+            padding: 10px;
             border: 1px solid #ddd;
-            white-space: nowrap;
-            width: 1%;
         }
-        .vertical-value {
-            display: table-cell;
-            padding: 8px;
+        .data-table td {
+            padding: 8px 10px;
             border: 1px solid #ddd;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .data-table tr:hover {
+            background-color: #f1f1f1;
         }
         .error {
             color: red;
@@ -142,7 +143,7 @@
             displayResults(filteredData);
         }
         
-        // Hàm hiển thị kết quả dạng bảng dọc
+        // Hàm hiển thị kết quả dạng bảng ngang
         function displayResults(data) {
             const resultsContainer = document.getElementById('results');
             
@@ -152,27 +153,25 @@
             }
             
             let html = `<div class="result-count">Tìm thấy ${data.length} kết quả:</div>`;
+            html += '<table class="data-table"><thead><tr>';
             
-            // Lấy danh sách các header từ item đầu tiên
+            // Tạo tiêu đề bảng từ keys của object đầu tiên
             const headers = Object.keys(data[0]);
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
             
+            // Thêm dữ liệu vào bảng
             data.forEach(item => {
-                html += '<div class="vertical-table">';
-                
-                for (const key in item) {
-                    if (item.hasOwnProperty(key)) {
-                        html += `
-                            <div class="vertical-row">
-                                <div class="vertical-header">${key}</div>
-                                <div class="vertical-value">${item[key]}</div>
-                            </div>
-                        `;
-                    }
-                }
-                
-                html += '</div>';
+                html += '<tr>';
+                headers.forEach(header => {
+                    html += `<td>${item[header]}</td>`;
+                });
+                html += '</tr>';
             });
             
+            html += '</tbody></table>';
             resultsContainer.innerHTML = html;
         }
         
